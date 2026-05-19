@@ -12,6 +12,8 @@ const canvas =
 const ctx =
   canvas.getContext("2d");
 
+ctx.imageSmoothingEnabled = false;
+
 // ----------------------
 // INTERNAL GAME SIZE
 // ----------------------
@@ -34,8 +36,6 @@ canvas.addEventListener("mousemove", (e) => {
   const rect =
     canvas.getBoundingClientRect();
 
-  // convert screen coords
-  // -> world coords
   const scaleX =
     canvas.width / rect.width;
 
@@ -65,8 +65,8 @@ canvas.addEventListener("click", () => {
     if (hovered) {
 
       sendMove(
-        exit.spawn.x,
-        exit.spawn.y
+        exit.x + exit.w / 2,
+        exit.y + exit.h / 2
       );
 
       break;
@@ -75,41 +75,38 @@ canvas.addEventListener("click", () => {
 });
 
 // ----------------------
-// FIXED INTERNAL RESOLUTION
+// RESIZE
 // ----------------------
 function resize() {
 
-  canvas.width =
-    GAME_WIDTH;
+  canvas.width = GAME_WIDTH;
+  canvas.height = GAME_HEIGHT;
 
-  canvas.height =
-    GAME_HEIGHT;
+  ctx.imageSmoothingEnabled = false;
 }
 
 resize();
 
-window.addEventListener(
-  "resize",
-  resize
-);
+window.addEventListener("resize", resize);
 
 // ----------------------
 // BACKGROUNDS
 // ----------------------
 const backgrounds = {
-
-  lobby: loadImage(
-    "assets/bg.png"
-  ),
-
-  room1: loadImage(
-    "assets/room1.png"
-  )
+  lobby: loadImage("./assets/bg.png"),
+  room1: loadImage("./assets/room1.png")
 };
 
 function loadImage(src) {
-
   const img = new Image();
+
+  img.onload = () => {
+    console.log("Loaded:", src);
+  };
+
+  img.onerror = () => {
+    console.error("FAILED:", src);
+  };
 
   img.src = src;
 
@@ -117,33 +114,21 @@ function loadImage(src) {
 }
 
 // ----------------------
-// SNAPSHOT FINDER
+// SNAPSHOTS
 // ----------------------
 function getSnapshots(time) {
 
   let a = null;
   let b = null;
 
-  for (
-    let i = 0;
-    i < stateBuffer.length - 1;
-    i++
-  ) {
+  for (let i = 0; i < stateBuffer.length - 1; i++) {
 
-    const s1 =
-      stateBuffer[i];
+    const s1 = stateBuffer[i];
+    const s2 = stateBuffer[i + 1];
 
-    const s2 =
-      stateBuffer[i + 1];
-
-    if (
-      s1.time <= time &&
-      time <= s2.time
-    ) {
-
+    if (s1.time <= time && time <= s2.time) {
       a = s1;
       b = s2;
-
       break;
     }
   }
@@ -165,29 +150,14 @@ function drawExits() {
       mouseY < exit.y + exit.h;
 
     if (hovered) {
-
-      ctx.fillStyle =
-        "rgba(255,255,0,0.35)";
-
-      ctx.fillRect(
-        exit.x,
-        exit.y,
-        exit.w,
-        exit.h
-      );
+      ctx.fillStyle = "rgba(255,255,0,0.35)";
+      ctx.fillRect(exit.x, exit.y, exit.w, exit.h);
     }
 
     if (DEBUG) {
-
-      ctx.strokeStyle =
-        "yellow";
-
-      ctx.strokeRect(
-        exit.x,
-        exit.y,
-        exit.w,
-        exit.h
-      );
+      ctx.strokeStyle = "yellow";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(exit.x, exit.y, exit.w, exit.h);
     }
   }
 }
@@ -202,9 +172,7 @@ function drawPlayers(players) {
     const p = players[id];
 
     ctx.fillStyle =
-      id === playerId
-        ? "blue"
-        : "red";
+      id === playerId ? "blue" : "red";
 
     ctx.beginPath();
 
@@ -225,28 +193,23 @@ function drawPlayers(players) {
 // ----------------------
 export function render() {
 
-  ctx.clearRect(
-    0,
-    0,
-    GAME_WIDTH,
-    GAME_HEIGHT
-  );
+  ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
 
   // ----------------------
-  // ROOM BACKGROUND
+  // BACKGROUND (SAFE)
   // ----------------------
+  const room =
+    currentRoom || "lobby";
+
   const bg =
-    backgrounds[currentRoom];
+    backgrounds[room];
 
-  if (bg && bg.complete) {
-
-    ctx.drawImage(
-      bg,
-      0,
-      0,
-      GAME_WIDTH,
-      GAME_HEIGHT
-    );
+  if (bg && bg.complete && bg.naturalWidth > 0) {
+    ctx.drawImage(bg, 0, 0, GAME_WIDTH, GAME_HEIGHT);
+  } else {
+    // fallback so we NEVER see browser background
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
   }
 
   // ----------------------
@@ -257,59 +220,40 @@ export function render() {
   // ----------------------
   // INTERPOLATION
   // ----------------------
-  const renderTime =
-    Date.now() - 100;
+  const renderTime = Date.now() - 100;
 
-  const { a, b } =
-    getSnapshots(renderTime);
+  const { a, b } = getSnapshots(renderTime);
 
-  // fallback
   if (!a || !b) {
 
     const latest =
-      stateBuffer[
-        stateBuffer.length - 1
-      ];
+      stateBuffer[stateBuffer.length - 1];
 
-    if (
-      !latest ||
-      !latest.players
-    ) return;
+    if (!latest || !latest.players) return;
 
-    drawPlayers(
-      latest.players
-    );
-
+    drawPlayers(latest.players);
     return;
   }
 
+  const delta = b.time - a.time;
+
   const alpha =
-    (renderTime - a.time) /
-    (b.time - a.time);
+    delta <= 0
+      ? 0
+      : (renderTime - a.time) / delta;
 
   const interpolated = {};
 
   for (const id in a.players) {
 
-    const p1 =
-      a.players[id];
+    const p1 = a.players[id];
+    const p2 = b.players[id];
 
-    const p2 =
-      b.players[id];
-
-    if (!p1 || !p2) {
-      continue;
-    }
+    if (!p1 || !p2) continue;
 
     interpolated[id] = {
-
-      x:
-        p1.x +
-        (p2.x - p1.x) * alpha,
-
-      y:
-        p1.y +
-        (p2.y - p1.y) * alpha
+      x: p1.x + (p2.x - p1.x) * alpha,
+      y: p1.y + (p2.y - p1.y) * alpha
     };
   }
 

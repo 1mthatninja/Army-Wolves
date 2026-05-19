@@ -1,97 +1,128 @@
 console.log("SERVER FILE LOADED");
 
-const { movePlayer } =
-  require("./movement");
+const WebSocket = require("ws");
+const crypto = require("crypto");
 
-const { checkExit } =
-  require("./interactionSystem");
+const { createPlayer } = require("./players");
+const { worldState } = require("./worldState");
+const { movePlayer } = require("./movement");
 
-const {
-  world,
-  movePlayerToRoom
-} = require("./rooms");
+const wss = new WebSocket.Server({ port: 3000 });
 
-const {
-  wss,
-  broadcastWorldState
-} = require("./networkServer");
+console.log("SERVER RUNNING ON ws://localhost:3000");
+
+// ----------------------
+// CONNECTIONS
+// ----------------------
+wss.on("connection", (ws) => {
+
+  const id = crypto.randomUUID();
+
+  ws.id = id;
+  ws.room = "lobby";
+
+  worldState.lobby.players[id] = createPlayer();
+
+  ws.send(JSON.stringify({
+    type: "init",
+    id
+  }));
+
+  // 🔥 THIS WAS MISSING (movement + room switching)
+  ws.on("message", (msg) => {
+
+    const data = JSON.parse(msg);
+
+    // ----------------------
+    // MOVE INPUT
+    // ----------------------
+    if (data.type === "move") {
+
+      const room = worldState[ws.room];
+      if (!room) return;
+
+      const player = room.players[ws.id];
+      if (!player) return;
+
+      player.targetX = data.x;
+      player.targetY = data.y;
+    }
+
+    // ----------------------
+    // ROOM SWITCH
+    // ----------------------
+    if (data.type === "joinRoom") {
+
+      const newRoom = data.room;
+      if (!worldState[newRoom]) return;
+
+      const player = worldState[ws.room].players[ws.id];
+      if (!player) return;
+
+      // remove from old room
+      delete worldState[ws.room].players[ws.id];
+
+      // add to new room
+      ws.room = newRoom;
+      worldState[newRoom].players[ws.id] = player;
+    }
+  });
+
+  // ----------------------
+  // CLEANUP
+  // ----------------------
+  ws.on("close", () => {
+    if (worldState[ws.room]) {
+      delete worldState[ws.room].players[ws.id];
+    }
+  });
+});
 
 // ----------------------
 // WORLD UPDATE LOOP
 // ----------------------
 function updateWorld() {
 
-  for (const roomName in world) {
+  for (const roomName in worldState) {
 
-    const room = world[roomName];
+    const room = worldState[roomName];
 
     for (const id in room.players) {
 
-      const player =
-        room.players[id];
+      const player = room.players[id];
+      if (!player) continue;
 
-      // movement
       movePlayer(player);
-
-      // exit detection
-      const exit =
-        checkExit(player, roomName);
-
-      // no exit touched
-      if (!exit) {
-        continue;
-      }
-
-      // exit target
-      const target =
-        exit.spawn;
-
-      const dx =
-        player.x - target.x;
-
-      const dy =
-        player.y - target.y;
-
-      const dist =
-        Math.sqrt(dx * dx + dy * dy);
-
-      // reached exit
-      if (dist < 5) {
-
-        const client =
-          [...wss.clients]
-            .find(c => c.id === id);
-
-        // valid room + valid socket
-        if (
-          client &&
-          world[exit.to]
-        ) {
-
-          movePlayerToRoom(
-            client,
-            id,
-            roomName,
-            exit.to,
-            exit.spawn
-          );
-        }
-      }
     }
   }
+}
+
+// ----------------------
+// BROADCAST LOOP
+// ----------------------
+function broadcast() {
+
+  wss.clients.forEach(client => {
+
+    if (client.readyState !== WebSocket.OPEN) return;
+
+    const room = worldState[client.room];
+    if (!room) return;
+
+    client.send(JSON.stringify({
+      type: "state",
+      time: Date.now(),
+      players: room.players,
+      room: client.room,
+      exits: room.exits
+    }));
+  });
 }
 
 // ----------------------
 // MAIN LOOP
 // ----------------------
 setInterval(() => {
-
   updateWorld();
-
-  broadcastWorldState();
-
+  broadcast();
 }, 50);
-
-console.log(
-  "Server running on ws://localhost:3000"
-);
