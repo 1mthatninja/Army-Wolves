@@ -1,21 +1,36 @@
-const { worldState } = require("./worldState");
+const { worldState } =
+  require("./worldState");
 
-function movePlayerToRoom(client, id, fromRoom, toRoom) {
+function movePlayerToRoom(
+  client,
+  id,
+  fromRoom,
+  toRoom,
+  spawn
+) {
 
-  const player = worldState[fromRoom].players[id];
+  const player =
+    worldState[fromRoom]
+      .players[id];
+
   if (!player) return;
 
-  delete worldState[fromRoom].players[id];
+  // remove from old room
+  delete worldState[fromRoom]
+    .players[id];
 
-  const spawn = worldState[toRoom].spawn;
-
+  // place at exit spawn
   player.x = spawn.x;
   player.y = spawn.y;
+
   player.targetX = spawn.x;
   player.targetY = spawn.y;
 
-  worldState[toRoom].players[id] = player;
+  // add to new room
+  worldState[toRoom]
+    .players[id] = player;
 
+  // update socket room
   client.room = toRoom;
 }
 

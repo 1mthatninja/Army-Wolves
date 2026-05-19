@@ -6,27 +6,23 @@ const roomDefs = require("./roomdefs");
 function checkExit(player, roomName) {
 
   const room = roomDefs[roomName];
+  if (!room || !room.interactions) return null;
 
-  if (!room || !room.exits) {
-    return null;
-  }
+  for (const interaction of room.interactions) {
 
-  for (const exit of room.exits) {
+    if (interaction.type !== "exit") continue;
 
     const inside =
-      player.x > exit.x &&
-      player.x < exit.x + exit.w &&
-      player.y > exit.y &&
-      player.y < exit.y + exit.h;
+      player.x > interaction.x &&
+      player.x < interaction.x + interaction.w &&
+      player.y > interaction.y &&
+      player.y < interaction.y + interaction.h;
 
-    if (inside) {
-      return exit;
-    }
+    if (inside) return interaction;
   }
 
   return null;
 }
-
 // ----------------------
 // EXPORTS
 // ----------------------

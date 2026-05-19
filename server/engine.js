@@ -1,30 +1,90 @@
 console.log("ENGINE LOADED");
 
-const { worldState } = require("./worldState");
-const { movePlayer } = require("./movement");
+const { worldState } =
+  require("./worldState");
+
+const { movePlayer } =
+  require("./movement");
+
+const { checkExit } =
+  require("./interactionSystem");
+
+const { movePlayerToRoom } =
+  require("./roomSystem");
 
 // ----------------------
 // WORLD UPDATE
 // ----------------------
-function updateWorld() {
+function updateWorld(wss) {
+
   for (const roomName in worldState) {
-    const room = worldState[roomName];
+
+    const room =
+      worldState[roomName];
 
     for (const id in room.players) {
-      const player = room.players[id];
+
+      const player =
+        room.players[id];
+
       if (!player) continue;
 
+      // ----------------------
+      // MOVEMENT
+      // ----------------------
       movePlayer(player);
+
+      // ----------------------
+      // COOLDOWN (PREVENT ROOM SPAM)
+      // ----------------------
+      player._roomCooldown =
+        player._roomCooldown || 0;
+
+      if (Date.now() - player._roomCooldown < 500) {
+        continue;
+      }
+
+      // ----------------------
+      // INTERACTIONS
+      // ----------------------
+      const interaction =
+        checkExit(player, roomName);
+
+      if (!interaction) continue;
+
+      if (interaction.type !== "exit") continue;
+
+      const client =
+        [...wss.clients]
+          .find(c => c.id === id);
+
+      if (!client) continue;
+
+      // mark cooldown BEFORE teleport
+      player._roomCooldown = Date.now();
+
+      movePlayerToRoom(
+        client,
+        id,
+        roomName,
+        interaction.to,
+        interaction.spawn || worldState[interaction.to].spawn
+      );
     }
   }
 }
 
 // ----------------------
-// START ENGINE (THIS IS WHAT YOU WERE MISSING)
+// START ENGINE
 // ----------------------
-function startEngine() {
+function startEngine(wss, broadcast) {
+
   setInterval(() => {
-    updateWorld();
+
+    updateWorld(wss);
+
+    broadcast();
+
   }, 50);
 }
 

@@ -1,9 +1,8 @@
-
 module.exports = {
   lobby: {
     spawn: {
-      x: 200,
-      y: 200
+      x: 679,
+      y: 749
     },
 
     interactions: [
@@ -16,7 +15,12 @@ module.exports = {
         w: 40,
         h: 120,
 
-        to: "room1"
+        to: "room1",
+
+        spawn: {
+          x: 80,
+          y: 200
+        }
       }
     ],
 
@@ -39,7 +43,12 @@ module.exports = {
         w: 40,
         h: 120,
 
-        to: "lobby"
+        to: "lobby",
+
+        spawn: {
+          x: 500,
+          y: 200
+        }
       }
     ],
 

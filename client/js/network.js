@@ -17,29 +17,38 @@ socket.onopen = () => {
 // RECEIVE MESSAGES
 // ----------------------
 socket.onmessage = (event) => {
+
   const data = JSON.parse(event.data);
 
   console.log("STATE RECEIVED:", data);
 
-  // init
+  // ----------------------
+  // INIT
+  // ----------------------
   if (data.type === "init") {
     playerId = data.id;
     return;
   }
 
-  // state
+  // ----------------------
+  // STATE UPDATE
+  // ----------------------
   if (data.type === "state") {
+
     stateBuffer.push({
       time: data.time,
-      players: structuredClone(data.players)
+      players: structuredClone(data.players || {})
     });
 
     if (stateBuffer.length > 10) {
       stateBuffer.shift();
     }
 
-    currentRoom = data.room;
-    exits = data.exits || [];
+    currentRoom = data.room || currentRoom;
+
+    exits = Array.isArray(data.exits)
+      ? data.exits
+      : [];
   }
 };
 
@@ -47,7 +56,8 @@ socket.onmessage = (event) => {
 // SAFE SEND MOVE
 // ----------------------
 export function sendMove(x, y) {
-  if (!socket || socket.readyState !== 1) return;
+
+  if (socket.readyState !== WebSocket.OPEN) return;
 
   socket.send(JSON.stringify({
     type: "move",
