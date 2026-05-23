@@ -1,65 +1,33 @@
- /* -----------------------------
-   GLOBAL
------------------------------ */
-body {
+html, body {
   margin: 0;
   padding: 0;
+  width: 100%;
+  height: 100%;
   overflow: hidden;
-  font-family: monospace;
-  background: #2f4f2f;
-}
-
-/* -----------------------------
-   PAGE
------------------------------ */
-#page {
-  width: 100vw;
-  height: 100vh;
-
+  background: #2f4f2f; /* bring your original color back */
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
-/* -----------------------------
-   GAME WINDOW (FIXED)
------------------------------ */
+#page {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
 #gameBox {
   width: 1520px;
   height: 960px;
-
   position: relative;
-
   background: black;
-  border: 3px solid #1e2f1e;
-
-  overflow: hidden;
-
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.6);
 }
 
-/* -----------------------------
-   CANVAS (FIXED 1:1 PIXELS)
------------------------------ */
+/* canvas MUST match internal resolution exactly */
 #game {
-  width: 1520px;
-  height: 960px;
-
+  width: 100%;
+  height: 100%;
   display: block;
-}
-
-/* -----------------------------
-   FULLSCREEN MODE (OPTIONAL)
------------------------------ */
-.fullscreen #gameBox {
-  width: 100vw;
-  height: 100vh;
-
-  border: none;
-  box-shadow: none;
-}
-
-.fullscreen #game {
-  width: 100vw;
-  height: 100vh;
 }
