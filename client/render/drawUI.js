@@ -32,7 +32,7 @@ export function drawUI(ctx, canvas) {
   // ----------------------
   // TOOLBAR BUTTONS
   // ----------------------
-  for (const button of layout.toolbarButtons) {
+  /*for (const button of layout.toolbarButtons) {
 
     const img =
       ui[button.id];
@@ -47,6 +47,7 @@ export function drawUI(ctx, canvas) {
       button.h
     );
   }
+    */
 
   // ----------------------
   // MAP BUTTON

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width" />
+  <title>Register - IDF Game</title>
+
+  <link rel="stylesheet" href="../css/register.css" />
+</head>
+
+<body>
+
+  <!-- NAVBAR (matches your main site) -->
+  <div class="navbar">
+    <div class="nav-left">
+      <div class="logo">IDF Game</div>
+
+      <div class="nav-links">
+        <a href="../index.html">Home</a>
+        <a href="register.html">Register</a>
+        <a href="login.html">Login</a>
+      </div>
+    </div>
+
+    <a class="play-btn" href="../html/game.html">Play Now</a>
+  </div>
+
+  <!-- CENTER PANEL -->
+  <div class="page">
+
+    <div class="panel">
+
+      <h1>Create Account</h1>
+      <p class="subtitle">Choose your identity in the world</p>
+
+      <!-- USER INPUTS -->
+      <label>Username</label>
+      <input id="username" placeholder="Enter username" />
+
+      <label>Password</label>
+      <input id="password" type="password" placeholder="Enter password" />
+
+      <!-- COLOR PICKER -->
+      <label>Choose Color</label>
+      <div class="colors">
+        <div class="color blue" onclick="setColor('blue')"></div>
+        <div class="color red" onclick="setColor('red')"></div>
+        <div class="color green" onclick="setColor('green')"></div>
+        <div class="color yellow" onclick="setColor('yellow')"></div>
+      </div>
+
+      <!-- ICON PICKER -->
+      <label>Choose Icon</label>
+      <div class="icons">
+        <div class="icon" onclick="setIcon('wave')">👋</div>
+        <div class="icon" onclick="setIcon('smile')">😊</div>
+        <div class="icon" onclick="setIcon('star')">⭐</div>
+      </div>
+
+      <button onclick="register()">CREATE ACCOUNT</button>
+
+      <p id="msg"></p>
+
+    </div>
+
+  </div>
+
+  <script>
+    const socket = new WebSocket("ws://localhost:3000");
+
+    let selectedColor = "blue";
+    let selectedIcon = "wave";
+
+    function setColor(color) {
+      selectedColor = color;
+    }
+
+    function setIcon(icon) {
+      selectedIcon = icon;
+    }
+
+    function register() {
+      socket.send(JSON.stringify({
+        type: "register",
+        username: username.value,
+        password: password.value,
+        color: selectedColor,
+        icon: selectedIcon
+      }));
+    }
+
+    socket.onmessage = (event) => {
+      const msg = JSON.parse(event.data);
+
+      if (msg.type === "register_success") {
+        document.getElementById("msg").innerText = "Account created!";
+      }
+
+      if (msg.type === "register_failed") {
+        document.getElementById("msg").innerText = "Username already exists";
+      }
+    };
+  </script>
+
+</body>
+</html>
