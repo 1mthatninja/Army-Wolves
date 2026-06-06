@@ -1,120 +1,49 @@
 console.log("SERVER FILE LOADED");
 
+// ----------------------
+// IMPORTS
+// ----------------------
+const express = require("express");
+const http = require("http");
 const WebSocket = require("ws");
 const crypto = require("crypto");
 
-const { worldState } =
-  require("./worldState");
+const authRoutes = require("./api/auth");
+const { initDB } = require("./db/init");
 
-const { startEngine } =
-  require("./engine");
+const { worldState } = require("./worldState");
+const { startEngine } = require("./engine");
+const { applySpawn } = require("./spawnSystem");
+const roomDefs = require("./roomdefs");
 
-const { applySpawn } =
-  require("./spawnSystem");
+// ----------------------
+// EXPRESS APP
+// ----------------------
+const app = express();
+app.use(express.json());
 
-const roomDefs =
-  require("./roomdefs");
+// serve client
+app.use(express.static("../client"));
+
+// API routes
+app.use("/api", authRoutes);
+
+// ----------------------
+// HTTP SERVER
+// ----------------------
+const server = http.createServer(app);
 
 // ----------------------
 // WEBSOCKET SERVER
 // ----------------------
-const wss =
-  new WebSocket.Server({
-    port: 3000
-  });
-
-console.log(
-  "SERVER RUNNING ON ws://localhost:3000"
-);
+const wss = new WebSocket.Server({ server });
 
 // ----------------------
-// CONNECTIONS
-// ----------------------
-wss.on("connection", (ws) => {
-
-  const id =
-    crypto.randomUUID();
-
-  ws.id = id;
-  ws.room = "lobby";
-
-  // create player
-    // create player
-  const player = {
-  speed: 560
-};
-
-  // apply room spawn
-  applySpawn(
-    player,
-    "lobby"
-  );
-
-  // add to world
-  worldState.lobby.players[id] =
-    player;
-
-  // send init
-  ws.send(JSON.stringify({
-    type: "init",
-    id
-  }));
-
-  // ----------------------
-  // CLIENT MESSAGES
-  // ----------------------
-  ws.on("message", (msg) => {
-
-    const data =
-      JSON.parse(msg);
-
-    // ----------------------
-    // MOVE INPUT
-    // ----------------------
-    if (data.type === "move") {
-
-      const room =
-        worldState[ws.room];
-
-      if (!room) return;
-
-      const player =
-        room.players[ws.id];
-
-      if (!player) return;
-
-      player.targetX =
-        data.x;
-
-      player.targetY =
-        data.y;
-    }
-  });
-
-  // ----------------------
-  // DISCONNECT
-  // ----------------------
-  ws.on("close", () => {
-
-    const room =
-      worldState[ws.room];
-
-    if (!room) return;
-
-    delete room.players[ws.id];
-  });
-});
-
-// ----------------------
-// BROADCAST
+// BROADCAST FUNCTION
 // ----------------------
 function broadcast() {
-
-  wss.clients.forEach(client => {
-
+  wss.clients.forEach((client) => {
     if (client.readyState !== WebSocket.OPEN) return;
-
-    console.log(worldState[client.room].players); // ✅ correct place
 
     const room = worldState[client.room];
     if (!room) return;
@@ -124,17 +53,79 @@ function broadcast() {
       time: Date.now(),
       players: room.players,
       room: client.room,
-      exits:
-      roomDefs[client.room]
-       .interactions || []
+      exits: roomDefs[client.room]?.interactions || []
     }));
   });
 }
 
 // ----------------------
-// START ENGINE
+// WEBSOCKET CONNECTIONS
 // ----------------------
-startEngine(
-  wss,
-  broadcast
-);
+wss.on("connection", (ws) => {
+  const id = crypto.randomUUID();
+
+  ws.id = id;
+  ws.room = "lobby";
+
+  const player = {
+    speed: 190
+  };
+
+  applySpawn(player, "lobby");
+
+  worldState.lobby.players[id] = player;
+
+  ws.send(JSON.stringify({
+    type: "init",
+    id
+  }));
+
+  ws.on("message", (msg) => {
+    let data;
+    try {
+      data = JSON.parse(msg);
+    } catch {
+      return;
+    }
+
+    if (data.type === "move") {
+      const room = worldState[ws.room];
+      if (!room) return;
+
+      const player = room.players[ws.id];
+      if (!player) return;
+
+      player.targetX = data.x;
+      player.targetY = data.y;
+    }
+  });
+
+  ws.on("close", () => {
+    const room = worldState[ws.room];
+    if (!room) return;
+
+    delete room.players[ws.id];
+  });
+});
+
+// ----------------------
+// STARTUP FLOW (IMPORTANT)
+// ----------------------
+async function start() {
+  try {
+    await initDB();
+
+    server.listen(3000, () => {
+      console.log("HTTP + WS SERVER RUNNING ON http://localhost:3000");
+    });
+
+    startEngine(wss, broadcast);
+
+  } catch (err) {
+    console.error("SERVER START FAILED:", err);
+    process.exit(1);
+  }
+}
+
+// boot
+start();

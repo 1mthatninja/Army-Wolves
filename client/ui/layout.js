@@ -18,8 +18,8 @@ export function layoutUI(canvas) {
   // TOOLBAR
   // ----------------------
   const toolbar = {
-    width: 750,
-    height: 225
+    width: 750*1.25,
+    height: 225*1.25
   };
 
   toolbar.x =
@@ -28,7 +28,7 @@ export function layoutUI(canvas) {
     toolbar.width / 2;
 
   toolbar.y =
-    hud.y;
+    hud.y -40;
 
 // ----------------------
 // TOOLBAR BUTTONS
@@ -36,12 +36,12 @@ export function layoutUI(canvas) {
 const toolbarButtons =
   uiRegistry.toolbarButtons;
 
-const buttonWidth = 300;
-const buttonHeight = 115;
+const buttonWidth = 60;
+const buttonHeight = 60;
 
-const leftPadding = 27;
+const leftPadding = 465;
 
-const normalGap = -350;
+const normalGap = -130;
 const chatGap = 120;
 
 let x =
@@ -52,7 +52,7 @@ toolbarButtons.forEach((button, i) => {
   button.x = x;
 
   button.y =
-    toolbar.y + 25;
+    toolbar.y + 105;
 
   button.w = buttonWidth;
   button.h = buttonHeight;
@@ -72,13 +72,13 @@ toolbarButtons.forEach((button, i) => {
     uiRegistry.map;
 
   mapButton.x =
-    hud.width - 270;
+    hud.width - 350;
 
   mapButton.y =
-    hud.y + 35;
+    hud.y - 10;
 
-  mapButton.w = 100;
-  mapButton.h = 120;
+  mapButton.w = 100*1.2;
+  mapButton.h = 120*1.2;
 
   // ----------------------
   // RETURN LAYOUT
