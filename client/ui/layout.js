@@ -18,67 +18,51 @@ export function layoutUI(canvas) {
   // TOOLBAR
   // ----------------------
   const toolbar = {
-    width: 750,
-    height: 225
+    width: 750 * 1.25,
+    height: 225 * 1.25
   };
 
-  toolbar.x =
-    hud.x +
-    hud.width / 2 -
-    toolbar.width / 2;
+  toolbar.x = hud.width / 2 - toolbar.width / 2;
+  toolbar.y = hud.y - 40;
 
-  toolbar.y =
-    hud.y;
+  // ----------------------
+  // TOOLBAR BUTTONS
+  // ----------------------
+  const toolbarButtons = uiRegistry.toolbarButtons;
 
-// ----------------------
-// TOOLBAR BUTTONS
-// ----------------------
-const toolbarButtons =
-  uiRegistry.toolbarButtons;
+  console.log("toolbarButtons:", toolbarButtons.length);
 
-const buttonWidth = 300;
-const buttonHeight = 115;
+  const buttonWidth = 60;
+  const buttonHeight = 60;
 
-const leftPadding = 27;
+  const gap = 20;
 
-const normalGap = -350;
-const chatGap = 120;
+  // ✅ CENTER THE BUTTON GROUP PROPERLY (no magic 465)
+  const totalWidth =
+    toolbarButtons.length * buttonWidth +
+    (toolbarButtons.length - 1) * gap;
 
-let x =
-  toolbar.x + leftPadding;
+  let x = toolbar.x + (toolbar.width - totalWidth) / 2;
+  const y = toolbar.y + 105;
 
-toolbarButtons.forEach((button, i) => {
+  toolbarButtons.forEach((button, i) => {
+    button.x = x;
+    button.y = y;
+    button.w = buttonWidth;
+    button.h = buttonHeight;
 
-  button.x = x;
+    x += buttonWidth + gap;
+  });
 
-  button.y =
-    toolbar.y + 25;
-
-  button.w = buttonWidth;
-  button.h = buttonHeight;
-
-  x += buttonWidth;
-
-  if (i === 3) {
-    x += chatGap;
-  } else {
-    x += normalGap;
-  }
-});
   // ----------------------
   // MAP BUTTON
   // ----------------------
-  const mapButton =
-    uiRegistry.map;
+  const mapButton = uiRegistry.map;
 
-  mapButton.x =
-    hud.width - 270;
-
-  mapButton.y =
-    hud.y + 35;
-
-  mapButton.w = 100;
-  mapButton.h = 120;
+  mapButton.x = hud.width - 350;
+  mapButton.y = hud.y - 10;
+  mapButton.w = 100 * 1.2;
+  mapButton.h = 120 * 1.2;
 
   // ----------------------
   // RETURN LAYOUT
