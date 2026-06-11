@@ -15,6 +15,11 @@ router.post("/register", async (req, res) => {
     }
 
     const user = await register(username, password, color);
+    if (!user) {
+  return res.status(409).json({
+    error: "Username already exists"
+  });
+}
 
     return res.json({
       success: true,
