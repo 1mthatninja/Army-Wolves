@@ -1,53 +1,68 @@
 client/
-│
-├── app/                          🟦 UI LAYER (MENU SYSTEM)
+
+├── app/
+│   │
 │   ├── core/
-│   │   └── AppController.js      ⭐ ONLY ENTRY POINT
+│   │   ├── AppController.js
+│   │   └── session.js
 │   │
 │   ├── screens/
 │   │   ├── LoginScreen.js
 │   │   ├── RegisterScreen.js
 │   │   ├── ServerSelect.js
 │   │   ├── LoadingScreen.js
+│   │   └── SettingsScreen.js
 │   │
-│   ├── services/
-│   │   ├── authService.js        (HTTP login/register)
-│   │   ├── apiClient.js
+│   └── services/
+│       ├── apiClient.js
+│       └── authService.js
 │
-│
-├── engine/                       🟩 GAME LAYER (REALTIME WORLD)
+├── engine/
 │   ├── core/
-│   │   └── GameClient.js         ⭐ ONLY GAME ENTRY POINT
+│   │   └── GameClient.js
 │   │
 │   ├── net/
-│   │   ├── socket.js             (creates WS ONLY)
-│   │   ├── protocol.js           (packet types)
+│   │   ├── socket.js
+│   │   └── protocol.js
 │   │
-│   ├── world/
-│   │   ├── state.js              (players, room, exits)
-│   │   ├── buffer.js             (stateBuffer replacement)
-│   │   ├── simulation.js
+│   ├── state/
+│   │   ├── worldState.js
+│   │   └── stateBuffer.js
+│   │
+│   ├── simulation/
+│   │   ├── movementSystem.js
+│   │   └── roomTransitionSystem.js
 │   │
 │   ├── render/
 │   │   ├── renderer.js
+│   │   ├── drawBackground.js
 │   │   ├── drawPlayers.js
-│   │   ├── drawUI.js
+│   │   ├── drawExits.js
+│   │   └── drawUI.js
 │   │
 │   ├── input/
-│   │   ├── mouse.js              (ONLY input → intent)
-│   │   ├── movement.js
+│   │   ├── mouse.js
+│   │   ├── mouseState.js
+│   │   └── movement.js
 │   │
 │   ├── systems/
-│   │   ├── interpolation.js
 │   │   ├── camera.js
+│   │   └── interpolation.js
+│   │
+│   └── features/
+│       ├── chat/
+│       ├── emotes/
+│       ├── friends/
+│       ├── inventory/
+│       ├── map/
+│       └── moderation/
 │
-│
-├── shared/                       🟨 SHARED HELPERS (KEEP SMALL)
+├── shared/
 │   ├── constants.js
-│   ├── utils.js
+│   └── utils.js
 │
+├── assets/
+├── css/
+├── html/
 │
-├── assets/                       🟪 STATIC (UNCHANGED)
-│   ├── player/
-│   ├── ui/
-│   ├── backgrounds/
+└── main.js
