@@ -3,7 +3,7 @@ import { SocketClient } from "../net/socket.js";
 import { worldState } from "../state/worldState.js";
 import { stateBuffer } from "../state/stateBuffer.js";
 
-import { startRenderer } from "../render/renderer.js";
+import { startRenderer } from "../gameRender/gameRenderer.js";
 import { startInput } from "../input/inputController.js";
 
 export class GameClient {

@@ -101,7 +101,7 @@ async function handleRegister() {
 
     alert("Account created!");
 
-    window.location.href = "/html/login.html";
+    window.location.href = "../play.html";
 
   } catch (err) {
 

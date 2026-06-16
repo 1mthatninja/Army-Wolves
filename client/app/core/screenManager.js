@@ -5,7 +5,6 @@ export class ScreenManager {
   }
 
   set(screen, name = null) {
-    // cleanup old screen
     if (this.current?.destroy) {
       this.current.destroy();
     }
@@ -13,7 +12,6 @@ export class ScreenManager {
     this.current = screen;
     this.currentName = name;
 
-    // optional lifecycle hook
     if (this.current?.enter) {
       this.current.enter();
     }
@@ -22,52 +20,32 @@ export class ScreenManager {
   }
 
   update(dt) {
-    if (this.current?.update) {
-      this.current.update(dt);
-    }
+    this.current?.update?.(dt);
   }
 
-  render(ctx) {
-    if (this.current?.render) {
-      this.current.render(ctx);
-    }
-  }
-
+  // 👇 input stays here (routing layer)
   pointerDown(x, y) {
-    if (this.current?.pointerDown) {
-      this.current.pointerDown(x, y);
-    }
+    this.current?.pointerDown?.(x, y);
   }
 
   pointerMove(x, y) {
-    if (this.current?.pointerMove) {
-      this.current.pointerMove(x, y);
-    }
+    this.current?.pointerMove?.(x, y);
   }
 
   pointerUp(x, y) {
-    if (this.current?.pointerUp) {
-      this.current.pointerUp(x, y);
-    }
+    this.current?.pointerUp?.(x, y);
   }
 
   keyDown(e) {
-    if (this.current?.keyDown) {
-      this.current.keyDown(e);
-    }
+    this.current?.keyDown?.(e);
   }
 
   keyUp(e) {
-    if (this.current?.keyUp) {
-      this.current.keyUp(e);
-    }
+    this.current?.keyUp?.(e);
   }
 
   destroy() {
-    if (this.current?.destroy) {
-      this.current.destroy();
-    }
-
+    this.current?.destroy?.();
     this.current = null;
     this.currentName = null;
   }

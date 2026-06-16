@@ -1,4 +1,4 @@
-import { getLastUILayout } from "../render/drawUI.js";
+import { getLastUILayout } from "../gameRender/drawUI.js";
 import { uiRegistry } from "../ui/registry.js";
 import { pointerState } from "./pointerState.js";
 

@@ -5,12 +5,19 @@ import { ServerSelectScreen } from "../screens/serverSelectScreen.js";
 import { LoadingScreen } from "../screens/loadingScrean.js";
 import { GameScreen } from "../screens/gameScreen.js";
 
+import { AppRenderer } from "../appRender/appRenderer.js";
+import { GameClient } from "../../game/engine/gameClient.js";
+
 export class AppController {
   constructor() {
     this.screenManager = new ScreenManager();
 
     this.canvas = document.getElementById("game");
     this.ctx = this.canvas.getContext("2d");
+
+    this.appRenderer = new AppRenderer(this.ctx);
+
+    this.gameClient = null;
 
     this.lastTime = 0;
 
@@ -19,7 +26,6 @@ export class AppController {
 
   start() {
     console.log("[App] Starting...");
-
     this.showLogin();
     requestAnimationFrame(this.loop.bind(this));
   }
@@ -28,10 +34,21 @@ export class AppController {
     const dt = t - this.lastTime;
     this.lastTime = t;
 
-    this.screenManager.update(dt);
+    const screen = this.screenManager.current;
 
+    // 1. UPDATE
+    this.screenManager.update(dt);
+    this.gameClient?.update?.(dt);
+
+    // 2. CLEAR
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    this.screenManager.render(this.ctx);
+
+    // 3. RENDER (choose pipeline)
+    if (screen?.type === "game") {
+      this.gameClient?.render(this.ctx);
+    } else {
+      this.appRenderer.render(screen);
+    }
 
     requestAnimationFrame(this.loop.bind(this));
   }
@@ -41,9 +58,7 @@ export class AppController {
   showLogin() {
     this.screenManager.set(
       new LoginScreen({
-        onLoginSuccess: (data) => {
-          this.showServerSelect();
-        }
+        onLoginSuccess: () => this.showServerSelect()
       }),
       "LOGIN"
     );
@@ -52,9 +67,7 @@ export class AppController {
   showServerSelect() {
     this.screenManager.set(
       new ServerSelectScreen({
-        onJoin: (server) => {
-          this.showLoading();
-        }
+        onJoin: () => this.showLoading()
       }),
       "SERVER_SELECT"
     );
@@ -66,7 +79,6 @@ export class AppController {
       "LOADING"
     );
 
-    // later:
     setTimeout(() => {
       this.showGame();
     }, 1000);
@@ -77,6 +89,10 @@ export class AppController {
       new GameScreen(),
       "GAME"
     );
+
+    // IMPORTANT: game is its own renderer system
+    this.gameClient = new GameClient();
+    this.gameClient.start();
   }
 
   // ---------------- input ----------------
