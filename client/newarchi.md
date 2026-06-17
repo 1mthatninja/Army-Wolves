@@ -121,3 +121,52 @@ ui/src
 │   └── authService.js
 ├── App.jsx
 └── main.jsx
+
+
+ui/
+  app/
+    screens/
+      LoginPage.jsx
+      ServerSelect.jsx
+      LoadingPage.jsx
+    services/
+      authService.js   ← HTTP (Express API ONLY)
+
+  components/
+    GameCanvas.jsx    ← React mounts canvas ONLY
+
+
+game/
+  engine/
+    startGame.js      ← entry point (called by React)
+    bootstrap.js      ← wires systems together
+    renderer.js       ← canvas render loop
+
+    net/
+      websocket.js    ← WS client (movement/chat/state sync)
+
+    state/
+      worldState.js   ← client-side game state
+
+    systems/
+      movement.js
+      interpolation.js
+      input.js
+      camera.js
+
+  ui/
+    overlays/
+      Chat.jsx
+      Inventory.jsx
+      Friends.jsx
+      HUD.jsx
+
+
+server/
+  api/
+    auth.js           ← Express login/register, accounts
+
+  ws/
+    world.js          ← authoritative game simulation
+    rooms.js
+    players.js
