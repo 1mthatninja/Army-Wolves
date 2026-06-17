@@ -103,3 +103,21 @@ client/
 ├── assets/
 ├── css/
 └── html/
+
+
+
+
+react archi
+ui/src
+├── components
+│   ├── LoginForm.jsx
+│   ├── ServerSelect.jsx
+│   └── GameCanvas.jsx
+├── screens
+│   ├── LoginPage.jsx
+│   ├── LoadingPage.jsx
+│   └── GamePage.jsx
+├── services
+│   └── authService.js
+├── App.jsx
+└── main.jsx
