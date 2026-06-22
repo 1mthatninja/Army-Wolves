@@ -28,14 +28,14 @@ app.use(express.json());
  * Serve ONLY public assets cleanly
  * (prevents leaking server folders + fixes asset resolution issues)
  */
-app.use(express.static(path.join(__dirname, "../client/new_client/public")));
+app.use(express.static(path.join(__dirname, "../client/public")));
 
 // ----------------------
 // ROOT PAGE
 // ----------------------
 app.get("/", (req, res) => {
   res.sendFile(
-    path.join(__dirname, "../client/new_client/public/play.html")
+    path.join(__dirname, "../client/public/play.html")
   );
 });
 
