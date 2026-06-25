@@ -5,17 +5,20 @@ console.log("SERVER FILE LOADED");
 // ----------------------
 const express = require("express");
 const http = require("http");
-const WebSocket = require("ws");
-const crypto = require("crypto");
 const path = require("path");
 
 const authRoutes = require("./api/auth");
 const { initDB } = require("./db/init");
+const { startEngine } = require("./engine/engine");
 
-const { worldState } = require("./worldState");
-const { startEngine } = require("./engine");
-const { applySpawn } = require("./spawnSystem");
-const roomDefs = require("./roomdefs");
+// Networking layer (moved out of server.js)
+const {
+  createWebSocketServer
+} = require("./net/websocketServer");
+
+const {
+  broadcastWorldState
+} = require("./net/broadcaster");
 
 // ----------------------
 // EXPRESS APP
@@ -24,11 +27,12 @@ const app = express();
 
 app.use(express.json());
 
-/**
- * Serve ONLY public assets cleanly
- * (prevents leaking server folders + fixes asset resolution issues)
- */
-app.use(express.static(path.join(__dirname, "../client/public")));
+// Serve client static files
+app.use(
+  express.static(
+    path.join(__dirname, "../client/public")
+  )
+);
 
 // ----------------------
 // ROOT PAGE
@@ -52,137 +56,31 @@ const server = http.createServer(app);
 // ----------------------
 // WEBSOCKET SERVER
 // ----------------------
-const wss = new WebSocket.Server({ server });
-
-// ----------------------
-// SAFE ROOM INIT
-// ----------------------
-function ensureRoom(roomId) {
-  if (!worldState[roomId]) {
-    worldState[roomId] = {
-      players: {},
-      exits: []
-    };
-  }
-  return worldState[roomId];
-}
-
-// ----------------------
-// BROADCAST FUNCTION
-// ----------------------
-function broadcast() {
-  wss.clients.forEach((client) => {
-    if (client.readyState !== WebSocket.OPEN) return;
-
-    const room = worldState[client.room];
-    if (!room || !room.players) return;
-
-    client.send(
-      JSON.stringify({
-        type: "state",
-        time: Date.now(),
-        players: room.players,
-        room: client.room,
-        exits: roomDefs?.[client.room]?.interactions || []
-      })
-    );
-  });
-}
-
-// ----------------------
-// WEBSOCKET CONNECTIONS
-// ----------------------
-wss.on("connection", (ws) => {
-  const id = crypto.randomUUID();
-
-  ws.id = id;
-  ws.room = "lobby";
-
-  // ensure room exists
-  const room = ensureRoom("lobby");
-
-  // create player
-  const player = {
-    id,
-    x: 0,
-    y: 0,
-    targetX: 0,
-    targetY: 0,
-    speed: 500
-  };
-
-  applySpawn(player, "lobby");
-
-  room.players[id] = player;
-
-  // ----------------------
-  // IMPORTANT: FULL INIT PACKET (FIX)
-  // ----------------------
-  ws.send(
-    JSON.stringify({
-      type: "init",
-      id,
-      room: ws.room,
-      players: room.players
-    })
-  );
-
-  // ----------------------
-  // MESSAGE HANDLER
-  // ----------------------
-  ws.on("message", (msg) => {
-    //console.log("[SERVER] raw message:", msg.toString());
-    let data;
-
-    try {
-      data = JSON.parse(msg);
-      //console.log("[SERVER] parsed:", data);
-    } catch {
-      return;
-    }
-
-    const room = worldState[ws.room];
-    if (!room) return;
-
-    const player = room.players[ws.id];
-    if (!player) return;
-
-    // ----------------------
-    // MOVE
-    // ----------------------
-    if (data.type === "move") {
-
-      player.targetX = data.x;
-      player.targetY = data.y;
-    
-    }
-  });
-
-  // ----------------------
-  // CLEANUP
-  // ----------------------
-  ws.on("close", () => {
-    const room = worldState[ws.room];
-    if (!room || !room.players) return;
-
-    delete room.players[ws.id];
-  });
-});
+// WebSocket lifecycle now handled in:
+// net/websocketServer.js
+const wss = createWebSocketServer(server);
 
 // ----------------------
 // STARTUP FLOW
 // ----------------------
 async function start() {
   try {
+    // Initialize database
     await initDB();
 
+    // Start HTTP + WebSocket server
     server.listen(3000, () => {
       console.log(
         "HTTP + WS SERVER RUNNING ON http://localhost:3000"
       );
     });
 
-    startEngine(wss, broadcast);
+    // Start game loop / simulation engine
+    // Engine updates world and broadcaster sends state packets
+    startEngine(
+      wss,
+      () => broadcastWorldState(wss)
+    );
 
   } catch (err) {
     console.error("SERVER START FAILED:", err);

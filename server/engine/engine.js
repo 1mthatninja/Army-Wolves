@@ -4,7 +4,7 @@ const { worldState } =
   require("./worldState");
 
 const { movePlayer } =
-  require("./movement");
+  require("./systems/movementSystem");
 
 const { checkExit } =
   require("./interactionSystem");
